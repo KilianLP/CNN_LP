@@ -52,6 +52,35 @@ class Decoder(nn.Module):
     return self.net(x)
 
 
+class VectorQuantizer(nn.Module):
+  def __init__(self,emb_dim,n_emb,beta=0.25):
+    super().__init__()
+
+    self.embeddings = nn.Embedding(n_emb,emb_dim)
+    self.embeddings.weight.data.uniform_(-1.0 / n_emb, 1.0 / n_emb)
+    self.beta = beta
+
+  def forward(self,x):
+
+    b,c,h,w = x.size()
+    flatten_x = x.permute(0,2,3,1).contiguous()
+    flatten_x = flatten_x.reshape(b,h*w,c)
+
+    dist = (flatten_x.unsqueeze(2) - self.embeddings.weight.unsqueeze(0).unsqueeze(0))**2
+    dist = dist.sum(dim = -1)
+    idx = dist.argmin(dim = -1)
+    emb_x = self.embeddings(idx)
+    emb_x = emb_x.permute(0,2,1)
+    emb_x = emb_x.reshape(b,c,h,w)
+
+    loss = ((x - emb_x.detach())**2).mean() + self.beta * ((x.detach() - emb_x)**2).mean()
+
+    emb_x = emb_x.detach() + x - x.detach()
+
+    return x, loss
+
+
+
 class Autoencoder(nn.Module):
   def __init__(self,n_emb):
     super().__init__()
