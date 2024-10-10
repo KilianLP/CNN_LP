@@ -77,7 +77,7 @@ class VectorQuantizer(nn.Module):
 
     emb_x = emb_x.detach() + x - x.detach()
 
-    return x, loss
+    return emb_x, loss
 
 
 
