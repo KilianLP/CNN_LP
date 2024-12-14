@@ -1,5 +1,7 @@
 import torch.optim as optim
 import torch.nn as nn
+from models import Autoencoder
+
 
 device = T.device("cuda" if T.cuda.is_available() else "cpu")
 
